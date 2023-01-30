@@ -16,7 +16,7 @@ const db = require('knex')({
 
 
 getRSSPH()
-cron.schedule('*/10 * * * * *', () => {
+cron.schedule('* * * * *', () => {
     getRSSPH();
 });
 
