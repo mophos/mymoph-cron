@@ -27,6 +27,14 @@ cron.schedule('0 * * * *', () => {
 //     // updatePayslip();
 // }
 
+updateAdvertise();
+//every 10 minutes
+cron.schedule('*/10 * * * *', () => {
+    console.log("update advertise at " + new Date().toLocaleString());
+    updateAdvertise();
+});
+
+
 async function getRSSPH() {
     console.time('pr');
     try {
@@ -76,6 +84,102 @@ function getPR(id) {
 
 function updatePRDB(id, data) {
     return db('rss_moph').where('id', id).update('data', data);
+}
+
+function getAllAdvertise() {
+    const options = {
+        method: 'GET',
+        url: `https://mymoph.moph.go.th/mymoph_api/news/all/0/10`,
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        json: true
+    };
+    return new Promise((resolve, reject) => {
+        request(options, function (error, response, body) {
+            if (error) {
+                reject({ statusCode: response.statusCode, error: error });
+            } else {
+                resolve({ statusCode: response.statusCode, body: body });
+            }
+        });
+    });
+}
+
+async function updateAdvertise() {
+    try {
+        await getAllAdvertise().then(async (rs) => {
+            if (rs.statusCode == 200) {
+                var rs_list = rs.body;
+                var old_data_list = await db.select('id').from('advertise');
+                // console.log(old_data_list);
+
+                //find data for delete
+                var delete_list = [];
+                old_data_list.forEach(element => {
+                    var id = element.id;
+                    const index = rs_list.findIndex(object => {
+                        return object.id === id;
+                    });
+                    if (index == -1) {
+                        delete_list.push(id);
+                    }
+                });
+
+                // console.log(delete_list, "<---delete");
+                delete_list.forEach(async element => {
+                    await db('advertise')
+                        .where('id', element)
+                        .del();
+                });
+
+                rs_list.forEach(async element => {
+                    var id = element.id;
+                    await updateAdvertiseByrecord(id, element);
+                });
+
+            }
+        }).catch((e) => {
+            console.log(e);
+        })
+
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function updateAdvertiseByrecord(id, data) {
+
+    return await db('advertise').insert({
+        "id": id,
+        "created": new Date(data.created),
+        "updated": new Date(data.updated),
+        "title": data.title,
+        "detail": data.detail,
+        "image_cover": data.image_cover,
+        "image_cover_base64": data.image_cover_base64,
+        "read": data.read,
+        "userid": data.userid,
+        "startdate": new Date(data.startdate),
+        "enddate": new Date(data.enddate),
+        "alway_show": data.alway_show,
+        "advertisetypeId": data.advertisetypeId,
+    }).onConflict('id')
+        .merge({
+            "created": new Date(data.created),
+            "updated": new Date(data.updated),
+            "title": data.title,
+            "detail": data.detail,
+            "image_cover": data.image_cover,
+            "image_cover_base64": data.image_cover_base64,
+            "read": data.read,
+            "userid": data.userid,
+            "startdate": new Date(data.startdate),
+            "enddate": new Date(data.enddate),
+            "alway_show": data.alway_show,
+            "advertisetypeId": data.advertisetypeId,
+        });
+
 }
 
 // async function updatePayslip() {
