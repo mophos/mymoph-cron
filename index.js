@@ -14,11 +14,18 @@ const db = require('knex')({
     }
 });
 
+var isLoopFirewall = false
 // first time on start service
 getRSSPH();
 updateAdvertise();
+updateFirewall203_157_4_235();
 
-//every 1 hours
+//every 5 sec
+cron.schedule('*/5 * * * * *', () => {
+    updateFirewall203_157_4_235();
+});
+
+//every hours
 cron.schedule('0 * * * *', () => {
     getRSSPH();
 });
@@ -167,4 +174,134 @@ async function updateAdvertiseByrecord(id, data) {
             "advertisetypeId": data.advertisetypeId,
         });
 
+}
+
+async function updateFirewall203_157_4_235() {
+    if (!isLoopFirewall) {
+        isLoopFirewall = true;
+        console.log("update firewall " + new Date().toLocaleString());
+        await getFirewall203_157_4_235(true, false).then(async (rs) => {
+            for (const i of rs) {
+                const create = await callCreateAddressFirewall203_157_4_235(i.cid, i.mac_address);
+                if (create.statusCode == 200) {
+                    const add = await callAddAddressFirewall203_157_4_235(i.cid, i.mac_address);
+                    if (add.statusCode == 200) {
+                        await updateCreateDBFirewall203_157_4_235(i.id);
+                    }
+                }
+            }
+        }).catch((e) => {
+            console.log(e);
+        })
+        await getFirewall203_157_4_235(false, true).then(async (rs) => {
+            for (const i of rs) {
+                const create = await callRemoveMemberAddressFirewall203_157_4_235(i.cid, i.mac_address);
+                if (create.statusCode == 200) {
+                    const add = await callRemoveAddressFirewall203_157_4_235(i.cid, i.mac_address);
+                    if (add.statusCode == 200) {
+                        await updateRemoveDBFirewall203_157_4_235(i.id);
+                    }
+                }
+            }
+        }).catch((e) => {
+            console.log(e);
+        })
+        isLoopFirewall = false;
+    }
+}
+
+function getFirewall203_157_4_235(isCreated, isDeleted) {
+    const sql = db('device_wifi_moph').where('firewall_url', '203.157.4.235');
+    if (isCreated) {
+        sql.where('is_created_policy', 'N')
+        sql.where('is_deleted', 'N')
+    } else if (isDeleted) {
+        sql.where('is_deleted', 'Y')
+        sql.where('id_deleted_policy', 'N')
+    }
+    return sql;
+}
+
+function updateCreateDBFirewall203_157_4_235(id) {
+    return db('device_wifi_moph').where('firewall_url', '203.157.4.235').where('id', id).update('is_created_policy', 'Y')
+}
+
+function updateRemoveDBFirewall203_157_4_235(id) {
+    return db('device_wifi_moph').where('firewall_url', '203.157.4.235').where('id', id).update('id_deleted_policy', 'Y')
+}
+
+function callCreateAddressFirewall203_157_4_235(cid, macAddress) {
+    const options = {
+        method: 'POST',
+        url: 'https://203.157.4.235/api/v2/cmdb/firewall/address',
+        params: { access_token: process.env.FIREWALL203_157_4_235_KEY, vdom: 'ICT' },
+        headers: { 'Content-Type': 'application/json' },
+        data: {
+            name: `mymoph_${cid}_${macAddress}`,
+            type: 'mac',
+            'start-mac': macAddress,
+            'end-mac': macAddress
+        },
+        rejectUnauthorized: false
+    };
+    return new Promise((resolve, reject) => {
+        axios.request(options).then(function (response) {
+            resolve({ statusCode: response.status, body: response.data });
+        }).catch(function (error) {
+            console.log(error);
+            reject({ statusCode: error.status, error: error.message });
+        });
+    });
+}
+
+function callAddAddressFirewall203_157_4_235(cid, macAddress) {
+    const options = {
+        method: 'POST',
+        url: 'https://203.157.4.235/api/v2/cmdb/firewall/addrgrp/MyMOPH@MacAddress/member',
+        params: { access_token: process.env.FIREWALL203_157_4_235_KEY, vdom: 'ICT' },
+        headers: { 'Content-Type': 'application/json' },
+        data: { "name": `mymoph_${cid}_${macAddress}` },
+        rejectUnauthorized: false
+    };
+    return new Promise((resolve, reject) => {
+        axios.request(options).then(function (response) {
+            resolve({ statusCode: response.status, body: response.data });
+        }).catch(function (error) {
+            console.log(error);
+            reject({ statusCode: error.status, error: error.message });
+        });
+    });
+}
+
+function callRemoveMemberAddressFirewall203_157_4_235(cid, macAddress) {
+    const options = {
+        method: 'DELETE',
+        url: `https://203.157.4.235/api/v2/cmdb/firewall/addrgrp/MyMOPH@MacAddress/member/mymoph_${cid}_${macAddress}`,
+        params: { access_token: process.env.FIREWALL203_157_4_235_KEY, vdom: 'ICT' },
+        headers: { 'Content-Type': 'application/json' }
+    };
+    return new Promise((resolve, reject) => {
+        axios.request(options).then(function (response) {
+            resolve({ statusCode: response.status, body: response.data });
+        }).catch(function (error) {
+            reject({ statusCode: error.status, error: error.message });
+        });
+    });
+}
+
+function callRemoveAddressFirewall203_157_4_235(cid, macAddress) {
+    const options = {
+        method: 'DELETE',
+        url: `https://203.157.4.235/api/v2/cmdb/firewall/address`,
+        params: { access_token: process.env.FIREWALL203_157_4_235_KEY, vdom: 'ICT' },
+        headers: { 'Content-Type': 'application/json' },
+        data: { "name": `mymoph_${cid}_${macAddress}` }
+    };
+    return new Promise((resolve, reject) => {
+        axios.request(options).then(function (response) {
+            resolve({ statusCode: response.status, body: response.data });
+        }).catch(function (error) {
+            reject({ statusCode: error.status, error: error.message });
+        });
+    });
 }
