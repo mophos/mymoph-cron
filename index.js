@@ -179,8 +179,10 @@ async function updateAdvertiseByrecord(id, data) {
 async function updateFirewall203_157_4_235() {
     if (!isLoopFirewall) {
         isLoopFirewall = true;
-        console.log("update firewall " + new Date().toLocaleString());
         await getFirewall203_157_4_235(true, false).then(async (rs) => {
+            if (rs.length) {
+                console.log("update firewall add " + new Date().toLocaleString());
+            }
             for (const i of rs) {
                 const create = await callCreateAddressFirewall203_157_4_235(i.cid, i.mac_address);
                 if (create.statusCode == 200) {
@@ -194,6 +196,9 @@ async function updateFirewall203_157_4_235() {
             console.log(e);
         })
         await getFirewall203_157_4_235(false, true).then(async (rs) => {
+            if (rs.length) {
+                console.log("update firewall remove " + new Date().toLocaleString());
+            }
             for (const i of rs) {
                 const create = await callRemoveMemberAddressFirewall203_157_4_235(i.cid, i.mac_address);
                 if (create.statusCode == 200) {
