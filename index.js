@@ -184,9 +184,9 @@ async function updateFirewall203_157_4_235() {
                 console.log("update firewall add " + new Date().toLocaleString());
             }
             for (const i of rs) {
-                const create = await callCreateAddressFirewall203_157_4_235(i.cid, i.mac_address);
+                const create = await callCreateAddressFirewall203_157_4_235(i.cid, i.mac_address,vdom);
                 if (create.statusCode == 200) {
-                    const add = await callAddAddressFirewall203_157_4_235(i.cid, i.mac_address);
+                    const add = await callAddAddressFirewall203_157_4_235(i.cid, i.mac_address,vdom);
                     if (add.statusCode == 200) {
                         await updateCreateDBFirewall203_157_4_235(i.id);
                     }
@@ -200,9 +200,9 @@ async function updateFirewall203_157_4_235() {
                 console.log("update firewall remove " + new Date().toLocaleString());
             }
             for (const i of rs) {
-                const create = await callRemoveMemberAddressFirewall203_157_4_235(i.cid, i.mac_address);
+                const create = await callRemoveMemberAddressFirewall203_157_4_235(i.cid, i.mac_address,vdom);
                 if (create.statusCode == 200) {
-                    const add = await callRemoveAddressFirewall203_157_4_235(i.cid, i.mac_address);
+                    const add = await callRemoveAddressFirewall203_157_4_235(i.cid, i.mac_address,vdom);
                     if (add.statusCode == 200) {
                         await updateRemoveDBFirewall203_157_4_235(i.id);
                     }
@@ -235,11 +235,11 @@ function updateRemoveDBFirewall203_157_4_235(id) {
     return db('device_wifi_moph').where('firewall_url', '203.157.4.235').where('id', id).update('id_deleted_policy', 'Y')
 }
 
-function callCreateAddressFirewall203_157_4_235(cid, macAddress) {
+function callCreateAddressFirewall203_157_4_235(cid, macAddress,vdom) {
     const options = {
         method: 'POST',
         url: 'https://203.157.4.235/api/v2/cmdb/firewall/address',
-        params: { access_token: process.env.FIREWALL203_157_4_235_KEY, vdom: 'ICT' },
+        params: { access_token: process.env.FIREWALL203_157_4_235_KEY, vdom: vdom },
         headers: { 'Content-Type': 'application/json' },
         data: {
             name: `mymoph_${cid}_${macAddress}`,
@@ -259,11 +259,11 @@ function callCreateAddressFirewall203_157_4_235(cid, macAddress) {
     });
 }
 
-function callAddAddressFirewall203_157_4_235(cid, macAddress) {
+function callAddAddressFirewall203_157_4_235(cid, macAddress,vdom) {
     const options = {
         method: 'POST',
         url: 'https://203.157.4.235/api/v2/cmdb/firewall/addrgrp/MyMOPH@MacAddress/member',
-        params: { access_token: process.env.FIREWALL203_157_4_235_KEY, vdom: 'ICT' },
+        params: { access_token: process.env.FIREWALL203_157_4_235_KEY, vdom: vdom },
         headers: { 'Content-Type': 'application/json' },
         data: { "name": `mymoph_${cid}_${macAddress}` },
         rejectUnauthorized: false
@@ -278,11 +278,11 @@ function callAddAddressFirewall203_157_4_235(cid, macAddress) {
     });
 }
 
-function callRemoveMemberAddressFirewall203_157_4_235(cid, macAddress) {
+function callRemoveMemberAddressFirewall203_157_4_235(cid, macAddress,vdom) {
     const options = {
         method: 'DELETE',
         url: `https://203.157.4.235/api/v2/cmdb/firewall/addrgrp/MyMOPH@MacAddress/member/mymoph_${cid}_${macAddress}`,
-        params: { access_token: process.env.FIREWALL203_157_4_235_KEY, vdom: 'ICT' },
+        params: { access_token: process.env.FIREWALL203_157_4_235_KEY, vdom: vdom },
         headers: { 'Content-Type': 'application/json' }
     };
     return new Promise((resolve, reject) => {
@@ -294,11 +294,11 @@ function callRemoveMemberAddressFirewall203_157_4_235(cid, macAddress) {
     });
 }
 
-function callRemoveAddressFirewall203_157_4_235(cid, macAddress) {
+function callRemoveAddressFirewall203_157_4_235(cid, macAddress,vdom) {
     const options = {
         method: 'DELETE',
         url: `https://203.157.4.235/api/v2/cmdb/firewall/address`,
-        params: { access_token: process.env.FIREWALL203_157_4_235_KEY, vdom: 'ICT' },
+        params: { access_token: process.env.FIREWALL203_157_4_235_KEY, vdom: vdom },
         headers: { 'Content-Type': 'application/json' },
         data: { "name": `mymoph_${cid}_${macAddress}` }
     };
