@@ -1,6 +1,6 @@
 var cron = require('node-cron');
 require('dotenv').config();
-const request = require('request');
+const axios = require("axios").default;
 const db = require('knex')({
     client: 'mysql',
     connection: {
@@ -14,30 +14,24 @@ const db = require('knex')({
     }
 });
 
+// first time on start service
+getRSSPH();
+updateAdvertise();
 
-getRSSPH()
+//every 1 hours
 cron.schedule('0 * * * *', () => {
     getRSSPH();
 });
 
-
-// callHour();
-// function callHour() {
-//     getRSSPH();
-//     // updatePayslip();
-// }
-
-updateAdvertise();
 //every 10 minutes
 cron.schedule('*/10 * * * *', () => {
-    console.log("update advertise at " + new Date().toLocaleString());
     updateAdvertise();
 });
 
 
 async function getRSSPH() {
-    console.time('pr');
     try {
+        console.log("update rss pr at " + new Date().toLocaleString());
         await getPR(1).then(async (rs) => {
             if (rs.statusCode == 200) {
                 await updatePRDB(1, rs.body);
@@ -56,13 +50,10 @@ async function getRSSPH() {
     } catch (error) {
         console.log(error);
     }
-    console.timeEnd('pr');
     // console.log('get RSS PR Success!');
 }
 
-
 function getPR(id) {
-    const key = process.env.ekyc_appId;
     const options = {
         method: 'GET',
         url: `https://pr.moph.go.th/rss_prmoph.php?id=${id}`,
@@ -72,12 +63,10 @@ function getPR(id) {
         json: true
     };
     return new Promise((resolve, reject) => {
-        request(options, function (error, response, body) {
-            if (error) {
-                reject({ statusCode: response.statusCode, error: error });
-            } else {
-                resolve({ statusCode: response.statusCode, body: body });
-            }
+        axios.request(options).then(function (response) {
+            resolve({ statusCode: response.status, body: response.data });
+        }).catch(function (error) {
+            reject({ statusCode: error.status, error: error.message });
         });
     });
 }
@@ -96,18 +85,17 @@ function getAllAdvertise() {
         json: true
     };
     return new Promise((resolve, reject) => {
-        request(options, function (error, response, body) {
-            if (error) {
-                reject({ statusCode: response.statusCode, error: error });
-            } else {
-                resolve({ statusCode: response.statusCode, body: body });
-            }
+        axios.request(options).then(function (response) {
+            resolve({ statusCode: response.status, body: response.data });
+        }).catch(function (error) {
+            reject({ statusCode: error.status, error: error.message });
         });
     });
 }
 
 async function updateAdvertise() {
     try {
+        console.log("update advertise at " + new Date().toLocaleString());
         await getAllAdvertise().then(async (rs) => {
             if (rs.statusCode == 200) {
                 var rs_list = rs.body;
@@ -142,7 +130,6 @@ async function updateAdvertise() {
         }).catch((e) => {
             console.log(e);
         })
-
     } catch (error) {
         console.log(error);
     }
@@ -181,42 +168,3 @@ async function updateAdvertiseByrecord(id, data) {
         });
 
 }
-
-// async function updatePayslip() {
-//     const users = await getUser();
-//     for (const u of users) {
-//         const s = await getSlips()
-//     }
-// }
-
-// function getUser() {
-//     return db('users').select('cid').where('cid', '1100400728564')
-// }
-
-// function getSlips(accessToken) {
-//     try {
-//         const options = {
-//             method: 'GET',
-//             url: 'https://payslip-ops.moph.go.th/api/v1/m/user/slips',
-//             headers: {
-//                 'Content-Type': 'application/x-www-form-urlencoded',
-//                 'Authorization': `Bearer ${accessToken}`,
-//             }
-//         };
-//         return new Promise((resolve, reject) => {
-//             request(options, function (error, response, body) {
-//                 if (error) {
-//                     reject(error)
-//                 } else {
-//                     try {
-//                         resolve(JSON.parse(body))
-//                     } catch (error) {
-//                         reject(error)
-//                     }
-//                 }
-//             });
-//         });
-//     } catch (error) {
-//         return [];
-//     }
-// }
