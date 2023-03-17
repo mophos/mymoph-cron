@@ -135,10 +135,10 @@ async function updateAdvertise() {
 
             }
         }).catch((e) => {
-            console.log(e);
+            console.log(`catch ${e}`);
         })
     } catch (error) {
-        console.log(error);
+        console.log(`error ${error}`);
     }
 }
 
