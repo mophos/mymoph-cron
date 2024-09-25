@@ -19,6 +19,7 @@ var isLoopFirewall = false
 getRSSPH();
 updateAdvertise();
 updateFirewall203_157_4_235();
+updateAppSlideImage();
 
 //every 5 sec
 cron.schedule('*/5 * * * * *', () => {
@@ -33,6 +34,11 @@ cron.schedule('0 * * * *', () => {
 //every 10 minutes
 cron.schedule('*/10 * * * *', () => {
     updateAdvertise();
+});
+
+//every 10 minutes
+cron.schedule('* * * * *', () => {
+    updateAppSlideImage();
 });
 
 
@@ -176,6 +182,117 @@ async function updateAdvertiseByrecord(id, data) {
 
 }
 
+function getAllAppSlideImage() {
+    const options = {
+        method: 'GET',
+        url: `https://mymoph.moph.go.th/mymoph_api/app_slide_image/all`,
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        json: true
+    };
+    return new Promise((resolve, reject) => {
+        axios.request(options).then(function (response) {
+            resolve({ statusCode: response.status, body: response.data });
+        }).catch(function (error) {
+            reject({ statusCode: error.status, error: error.message });
+        });
+    });
+}
+
+function getAppSlideImageByName(filename) {
+    const options = {
+        method: 'GET',
+        url: `https://mymoph.moph.go.th/mymoph_api/app_slide_image/image/${filename}`,
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        json: true
+    };
+    return new Promise((resolve, reject) => {
+        axios.request(options).then(function (response) {
+            resolve({ statusCode: response.status, body: response.data });
+        }).catch(function (error) {
+            reject({ statusCode: error.status, error: error.message });
+        });
+    });
+}
+
+async function updateAppSlideImage() {
+    try {
+        console.log("update slide_image at " + new Date().toLocaleString());
+        await getAllAppSlideImage().then(async (rs) => {
+            if (rs.statusCode == 200) {
+                var rs_list = rs.body;
+                var old_data_list = await db.select('id').from('slide_image');
+                // console.log(old_data_list);
+
+                //find data for delete
+                var delete_list = [];
+                old_data_list.forEach(element => {
+                    var id = element.id;
+                    const index = rs_list.findIndex(object => {
+                        return object.id === id;
+                    });
+                    if (index == -1) {
+                        delete_list.push(id);
+                    }
+                });
+
+                // console.log(delete_list, "<---delete");
+                delete_list.forEach(async element => {
+                    await db('slide_image')
+                        .where('id', element)
+                        .del();
+                });
+
+                rs_list.forEach(async element => {
+                    var id = element.id;
+                    var img_rs = await getAppSlideImageByName(element.filename);
+                    var img = img_rs.body.img;
+                    var oldWord = "data:image/png;base64,";
+                    const regex = new RegExp(oldWord, 'gi');
+                    const new_img = img.replace(regex, "");
+                    element.image_base64 = new_img;
+                    await updateAppSlideImageByrecord(id, element);
+                });
+
+            }
+        }).catch((e) => {
+            console.log(`catch ${e}`);
+        })
+    } catch (error) {
+        console.log(`error ${error}`);
+    }
+}
+
+async function updateAppSlideImageByrecord(id, data) {
+
+    return await db('slide_image').insert({
+        "id": id,
+        "created": new Date(data.created),
+        "filename": data.filename,
+        "title": data.title,
+        "detail": data.detail,
+        "userid": data.userid,
+        "startdate": new Date(data.startdate),
+        "enddate": new Date(data.enddate),
+        "alway_show": data.alway_show,
+        "image_base64": data.image_base64,
+    }).onConflict('id')
+        .merge({
+            "created": new Date(data.created),
+            "filename": data.filename,
+            "title": data.title,
+            "detail": data.detail,
+            "userid": data.userid,
+            "startdate": new Date(data.startdate),
+            "enddate": new Date(data.enddate),
+            "alway_show": data.alway_show,
+            "image_base64": data.image_base64,
+        });
+}
+
 async function updateFirewall203_157_4_235() {
     if (!isLoopFirewall) {
         isLoopFirewall = true;
@@ -184,9 +301,9 @@ async function updateFirewall203_157_4_235() {
                 console.log("update firewall add " + new Date().toLocaleString());
             }
             for (const i of rs) {
-                const create = await callCreateAddressFirewall203_157_4_235(i.cid, i.mac_address,vdom);
+                const create = await callCreateAddressFirewall203_157_4_235(i.cid, i.mac_address, vdom);
                 if (create.statusCode == 200) {
-                    const add = await callAddAddressFirewall203_157_4_235(i.cid, i.mac_address,vdom);
+                    const add = await callAddAddressFirewall203_157_4_235(i.cid, i.mac_address, vdom);
                     if (add.statusCode == 200) {
                         await updateCreateDBFirewall203_157_4_235(i.id);
                     }
@@ -200,9 +317,9 @@ async function updateFirewall203_157_4_235() {
                 console.log("update firewall remove " + new Date().toLocaleString());
             }
             for (const i of rs) {
-                const create = await callRemoveMemberAddressFirewall203_157_4_235(i.cid, i.mac_address,vdom);
+                const create = await callRemoveMemberAddressFirewall203_157_4_235(i.cid, i.mac_address, vdom);
                 if (create.statusCode == 200) {
-                    const add = await callRemoveAddressFirewall203_157_4_235(i.cid, i.mac_address,vdom);
+                    const add = await callRemoveAddressFirewall203_157_4_235(i.cid, i.mac_address, vdom);
                     if (add.statusCode == 200) {
                         await updateRemoveDBFirewall203_157_4_235(i.id);
                     }
@@ -235,7 +352,7 @@ function updateRemoveDBFirewall203_157_4_235(id) {
     return db('device_wifi_moph').where('firewall_url', '203.157.4.235').where('id', id).update('id_deleted_policy', 'Y')
 }
 
-function callCreateAddressFirewall203_157_4_235(cid, macAddress,vdom) {
+function callCreateAddressFirewall203_157_4_235(cid, macAddress, vdom) {
     const options = {
         method: 'POST',
         url: 'https://203.157.4.235/api/v2/cmdb/firewall/address',
@@ -259,7 +376,7 @@ function callCreateAddressFirewall203_157_4_235(cid, macAddress,vdom) {
     });
 }
 
-function callAddAddressFirewall203_157_4_235(cid, macAddress,vdom) {
+function callAddAddressFirewall203_157_4_235(cid, macAddress, vdom) {
     const options = {
         method: 'POST',
         url: 'https://203.157.4.235/api/v2/cmdb/firewall/addrgrp/MyMOPH@MacAddress/member',
@@ -278,7 +395,7 @@ function callAddAddressFirewall203_157_4_235(cid, macAddress,vdom) {
     });
 }
 
-function callRemoveMemberAddressFirewall203_157_4_235(cid, macAddress,vdom) {
+function callRemoveMemberAddressFirewall203_157_4_235(cid, macAddress, vdom) {
     const options = {
         method: 'DELETE',
         url: `https://203.157.4.235/api/v2/cmdb/firewall/addrgrp/MyMOPH@MacAddress/member/mymoph_${cid}_${macAddress}`,
@@ -294,7 +411,7 @@ function callRemoveMemberAddressFirewall203_157_4_235(cid, macAddress,vdom) {
     });
 }
 
-function callRemoveAddressFirewall203_157_4_235(cid, macAddress,vdom) {
+function callRemoveAddressFirewall203_157_4_235(cid, macAddress, vdom) {
     const options = {
         method: 'DELETE',
         url: `https://203.157.4.235/api/v2/cmdb/firewall/address`,
