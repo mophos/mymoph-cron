@@ -36,8 +36,8 @@ cron.schedule('*/10 * * * *', () => {
     updateAdvertise();
 });
 
-//every 10 minutes
-cron.schedule('* * * * *', () => {
+//every 30 minutes
+cron.schedule('*/30 * * * *', () => {
     updateAppSlideImage();
 });
 
@@ -279,9 +279,9 @@ async function updateAppSlideImageByrecord(id, data) {
         "enddate": new Date(data.enddate),
         "alway_show": data.alway_show,
         "image_base64": data.image_base64,
+        "read": 0
     }).onConflict('id')
         .merge({
-            "created": new Date(data.created),
             "filename": data.filename,
             "title": data.title,
             "detail": data.detail,
