@@ -16,7 +16,7 @@ const db = require('knex')({
 
 var isLoopFirewall = false
 // first time on start service
-getRSSPH();
+// getRSSPH();
 updateAdvertise();
 // updateFirewall203_157_4_235();
 updateAppSlideImage();
@@ -27,9 +27,9 @@ updateAppSlideImage();
 // });
 
 //every hours
-cron.schedule('0 * * * *', () => {
-    getRSSPH();
-});
+// cron.schedule('0 * * * *', () => {
+//     getRSSPH();
+// });
 
 //every 10 minutes
 cron.schedule('*/10 * * * *', () => {
