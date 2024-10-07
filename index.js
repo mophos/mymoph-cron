@@ -18,13 +18,13 @@ var isLoopFirewall = false
 // first time on start service
 getRSSPH();
 updateAdvertise();
-updateFirewall203_157_4_235();
+// updateFirewall203_157_4_235();
 updateAppSlideImage();
 
 //every 5 sec
-cron.schedule('*/5 * * * * *', () => {
-    updateFirewall203_157_4_235();
-});
+// cron.schedule('*/5 * * * * *', () => {
+//     updateFirewall203_157_4_235();
+// });
 
 //every hours
 cron.schedule('0 * * * *', () => {
