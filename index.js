@@ -36,8 +36,8 @@ cron.schedule('*/10 * * * *', () => {
     updateAdvertise();
 });
 
-//every 30 minutes
-cron.schedule('*/30 * * * *', () => {
+//every 10 minutes
+cron.schedule('*/10 * * * *', () => {
     updateAppSlideImage();
 });
 
