@@ -1,0 +1,92 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(**/.env)",
+      "Edit(**/.env)",
+      "Read(**/.env.*)",
+      "Edit(**/.env.*)",
+      "Read(**/.env-*)",
+      "Edit(**/.env-*)",
+      "Read(assets/.env*)",
+      "Edit(assets/.env*)",
+      "Read(**/config/*)",
+      "Edit(**/config/*)",
+      "Read(flyway/conf/*)",
+      "Edit(flyway/conf/*)",
+      "Read(uploads/file/*)",
+      "Edit(uploads/file/*)",
+      "Read(src/environments/environment.production.ts)",
+      "Edit(src/environments/environment.production.ts)",
+      "Read(*.pem)",
+      "Edit(*.pem)",
+      "Read(*.key)",
+      "Edit(*.key)",
+      "Read(*.p12)",
+      "Edit(*.p12)",
+      "Read(*.pfx)",
+      "Edit(*.pfx)",
+      "Read(*.p8)",
+      "Edit(*.p8)",
+      "Read(*.crt)",
+      "Edit(*.crt)",
+      "Read(*.cer)",
+      "Edit(*.cer)",
+      "Read(*.jks)",
+      "Edit(*.jks)",
+      "Read(*.keystore)",
+      "Edit(*.keystore)",
+      "Read(*.mobileprovision)",
+      "Edit(*.mobileprovision)",
+      "Read(*.certSigningRequest)",
+      "Edit(*.certSigningRequest)",
+      "Read(id_rsa)",
+      "Edit(id_rsa)",
+      "Read(id_ed25519)",
+      "Edit(id_ed25519)",
+      "Read(**/credentials.json)",
+      "Edit(**/credentials.json)",
+      "Read(**/wildcard_moph_go_th.key)",
+      "Edit(**/wildcard_moph_go_th.key)",
+      "Read(**/bundle.crt)",
+      "Edit(**/bundle.crt)",
+      "Read(**/.secrets/**)",
+      "Edit(**/.secrets/**)",
+      "Read(**/ssl/**)",
+      "Edit(**/ssl/**)",
+      "Read(**/key.properties)",
+      "Edit(**/key.properties)",
+      "Read(**/key/**)",
+      "Edit(**/key/**)",
+      "Read(**/mymoph-keystore.jks)",
+      "Edit(**/mymoph-keystore.jks)",
+      "Read(**/upload_certificate.pem)",
+      "Edit(**/upload_certificate.pem)",
+      "Read(**/google-services.json)",
+      "Edit(**/google-services.json)",
+      "Read(**/agconnect-services.json)",
+      "Edit(**/agconnect-services.json)",
+      "Read(**/GoogleService-Info.plist)",
+      "Edit(**/GoogleService-Info.plist)",
+      "Read(**/firebase_options.dart)",
+      "Edit(**/firebase_options.dart)",
+      "Read(**/*firebase-adminsdk*.json)",
+      "Edit(**/*firebase-adminsdk*.json)",
+      "Read(**/sendNoti.json)",
+      "Edit(**/sendNoti.json)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/deny-secret-file-access.sh\"",
+            "statusMessage": "ตรวจสอบการเข้าถึงไฟล์ลับ"
+          }
+        ]
+      }
+    ]
+  }
+}

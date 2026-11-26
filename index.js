@@ -14,12 +14,16 @@ const db = require('knex')({
     }
 });
 
+const { createPublicContentSync } = require('./public-content-sync');
+const publicContentSync = createPublicContentSync({ db });
+
 var isLoopFirewall = false
 // first time on start service
 // getRSSPH();
-updateAdvertise();
+// updateAdvertise();
 // updateFirewall203_157_4_235();
-updateAppSlideImage();
+// updateAppSlideImage();
+publicContentSync.runOnce();
 
 //every 5 sec
 // cron.schedule('*/5 * * * * *', () => {
@@ -31,14 +35,19 @@ updateAppSlideImage();
 //     getRSSPH();
 // });
 
-//every 10 minutes
-cron.schedule('*/10 * * * *', () => {
-    updateAdvertise();
-});
+// //every 10 minutes
+// cron.schedule('*/10 * * * *', () => {
+//     updateAdvertise();
+// });
 
-//every 10 minutes
-cron.schedule('*/10 * * * *', () => {
-    updateAppSlideImage();
+// //every 10 minutes
+// cron.schedule('*/10 * * * *', () => {
+//     updateAppSlideImage();
+// });
+
+//every 30 minutes : ข้อมูลสาธารณะจาก MyMOPH Public API → public_content (อ่านโดย mymoph-api /public-content)
+cron.schedule('*/30 * * * *', () => {
+    publicContentSync.runOnce();
 });
 
 
