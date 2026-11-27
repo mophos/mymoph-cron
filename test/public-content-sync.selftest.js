@@ -68,6 +68,7 @@ up.lists['/carousels?place=app'] = [carousel(2, 'all')];
   up.lists[`/carousels?place=app&platform=${p}`] = [carousel(2, 'all'), carousel(`3${p}`, p)];
   up.lists[`/releases?platform=${p}`] = [release(`${p}-1`, p, '3.1.0')];
 });
+up.contact = { title: 'ติดต่อเรา', contentHtml: '<p>โทร 📞</p>', address: 'ถนนติวานนท์', phone: '02-590-1000', email: 'mymoph@moph.go.th', mapLat: 13.85, mapLng: 100.52, mapZoom: 16, mapUrl: 'https://www.openstreetmap.org/?mlat=13.85', url: 'https://mymoph.moph.go.th/contact' };
 up.lists['/releases'] = [release('ios-1', 'ios', '3.1.0'), release('android-1', 'android', '3.1.0')];
 
 const mock = http.createServer((req, res) => {
@@ -89,6 +90,10 @@ const mock = http.createServer((req, res) => {
   const failStatus = up.fail[`${p}?page=${page}`];
   if (failStatus) return send(failStatus, { error: { code: 'internal', message: 'ล้ม' } });
 
+  if (p === '/contact') {
+    if (!up.contact) return send(404, { error: { code: 'endpoint_disabled', message: 'ปิด' } });
+    return send(200, { data: up.contact, meta: { fields: [] } });
+  }
   const parts = p.split('/').filter(Boolean);
   if (parts.length === 2) {
     const d = (up.details[`/${parts[0]}`] || {})[decodeURIComponent(parts[1])];
@@ -153,6 +158,10 @@ const run = async () => {
   assert.deepStrictEqual(JSON.parse(relIos.meta_json), { latestVersion: '3.1.0', minimumVersion: '3.0.0' }, 'meta ของ release เก็บโดยตัด paging/fields');
   assert.strictEqual((await state('news')).meta_json, null);
   assert.strictEqual((await state('news')).last_status, 'ok');
+  const contact = await rows('contact');
+  assert.deepStrictEqual(contact.map((x) => [x.item_id, x.slug, x.is_active]), [['contact', 'contact', 1]], 'ข้อมูลติดต่อ = แถวเดียว');
+  assert.strictEqual(JSON.parse(contact[0].summary_json).contentHtml, '<p>โทร 📞</p>');
+  assert.deepStrictEqual(since(mark).filter((s) => s.path === '/contact').map((s) => s.query), [{}], '/contact ไม่ส่ง page/limit');
 
   // ---------- 2. ไม่มีอะไรเปลี่ยน : ไม่ดึงรายละเอียดซ้ำ ----------
   clock += 30 * 60 * 1000;
@@ -249,6 +258,20 @@ const run = async () => {
   assert.ok(events.slice(ev).some((e) => e.event === 'PUBLIC_SYNC_ABORT'));
   assert.ok(!JSON.stringify(events).includes(KEY), 'ไม่มี API key ใน log');
   up.unauthorized = false;
+
+  // ---------- 9.1 /contact ใช้ไม่ได้ (ปิด endpoint / เว็บยังไม่ deploy) : resource นี้ล้ม ข้อมูลเดิมอยู่ ----------
+  const savedContact = up.contact;
+  up.contact = null;
+  ev = events.length;
+  r = await sync.runOnce();
+  assert.strictEqual(r.failed, 1);
+  assert.ok(events.slice(ev).some((e) => e.event === 'PUBLIC_SYNC_FAIL' && e.data.resource === 'contact'));
+  assert.strictEqual((await rows('contact'))[0].is_active, 1, 'ล้ม = ไม่ปิดแถวเดิม');
+  assert.strictEqual((await state('contact')).last_status, 'error');
+  up.contact = Object.assign({}, savedContact, { phone: '02-590-9999' });
+  r = await sync.runOnce();
+  assert.strictEqual(r.failed, 0);
+  assert.strictEqual(JSON.parse((await rows('contact'))[0].summary_json).phone, '02-590-9999', 'แก้ข้อมูลติดต่อ = อัปเดต');
 
   // ---------- 10. รอบซ้อน / ไม่มี key ----------
   const first = sync.runOnce();

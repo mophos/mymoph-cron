@@ -44,6 +44,8 @@ const SOURCES = [
   ...PLATFORMS.map((p) => ({ resource: `carousel:app:${p}`, path: '/carousels', query: { place: 'app', platform: p }, allowEmpty: true })),
   { resource: 'release', path: '/releases' },
   ...PLATFORMS.map((p) => ({ resource: `release:${p}`, path: '/releases', query: { platform: p }, allowEmpty: true, keepMeta: true })),
+  // ข้อมูลหน้า "ติดต่อเรา" (ไม่ใช่รายการ) : เก็บเป็นแถวเดียว item_id = slug = 'contact'
+  { resource: 'contact', path: '/contact', single: 'contact' },
 ];
 
 const SUMMARY_COLS = ['slug', 'category_slug', 'position', 'is_active', 'summary_json', 'summary_hash', 'source_updated_at', 'synced_at', 'removed_at'];
@@ -165,6 +167,13 @@ function createPublicContentSync(options) {
   }
 
   async function fetchList(source, stats) {
+    if (source.single) {
+      const res = await request(source.path, source.query || null, null, stats);
+      if (res.status !== 200) throw errorFrom(res);
+      const body = res.data;
+      if (!body || !body.data || typeof body.data !== 'object' || Array.isArray(body.data)) throw new UpstreamError(res.status, 'BAD_RESPONSE');
+      return { items: [Object.assign({ id: source.single, slug: source.single }, body.data)], meta: body.meta || null };
+    }
     const items = [];
     const seen = new Set();
     let meta = null;
