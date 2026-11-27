@@ -45,8 +45,8 @@ publicContentSync.runOnce();
 //     updateAppSlideImage();
 // });
 
-//every 30 minutes : ข้อมูลสาธารณะจาก MyMOPH Public API → public_content (อ่านโดย mymoph-api /public-content)
-cron.schedule('*/30 * * * *', () => {
+//every 10 minutes : ข้อมูลสาธารณะจาก MyMOPH Public API → public_content (อ่านโดย mymoph-api /public-content)
+cron.schedule('*/10 * * * *', () => {
     publicContentSync.runOnce();
 });
 
